@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Red Ball</title>
+<title>Red Ball Mini</title>
 
 <style>
 body{
@@ -14,42 +14,7 @@ font-family:Arial,sans-serif;
 
 canvas{
 display:block;
-background:linear-gradient(#87ceeb,#dff6ff);
-}
-
-#ui{
-position:fixed;
-bottom:20px;
-left:0;
-width:100%;
-z-index:999;
-pointer-events:none;
-}
-
-.btn{
-pointer-events:auto;
-width:75px;
-height:75px;
-border:none;
-border-radius:50%;
-font-size:30px;
-background:white;
-opacity:.8;
-}
-
-#jump{
-position:absolute;
-left:20px;
-}
-
-#left{
-position:absolute;
-right:110px;
-}
-
-#right{
-position:absolute;
-right:20px;
+background:linear-gradient(#87CEEB,#DDF6FF);
 }
 
 #message{
@@ -57,9 +22,10 @@ position:fixed;
 top:40%;
 width:100%;
 text-align:center;
-font-size:42px;
+font-size:40px;
 font-weight:bold;
 display:none;
+z-index:1000;
 }
 
 #restart{
@@ -67,18 +33,56 @@ position:fixed;
 top:55%;
 left:50%;
 transform:translateX(-50%);
-padding:12px 25px;
-font-size:20px;
+padding:15px 30px;
+font-size:22px;
 display:none;
+z-index:1000;
+}
+
+#ui{
+position:fixed;
+bottom:90px;
+left:0;
+width:100%;
+z-index:999;
+}
+
+.btn{
+width:100px;
+height:100px;
+border:none;
+border-radius:50%;
+font-size:42px;
+background:white;
+opacity:.85;
+}
+
+#jump{
+position:absolute;
+left:25px;
+}
+
+#left{
+position:absolute;
+right:140px;
+}
+
+#right{
+position:absolute;
+right:25px;
 }
 </style>
 </head>
+
 <body>
 
 <canvas id="game"></canvas>
 
 <div id="message"></div>
-<button id="restart" onclick="location.reload()">Restart</button>
+
+<button id="restart" onclick="location.reload()">
+Restart
+</button>
 
 <div id="ui">
 <button class="btn" id="jump">⬆</button>
@@ -95,7 +99,7 @@ canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
 let cameraX=0;
-let gameEnded=false;
+let gameOver=false;
 
 const player={
 x:80,
@@ -109,22 +113,19 @@ ground:false
 const gravity=0.7;
 
 const grounds=[
-{x:0,w:650},
-{x:800,w:700},
-{x:1700,w:1500}
+{x:0,w:700},
+{x:900,w:1700}
 ];
 
-const hills=[
-{x:350,y:420,w:140,h:60},
-{x:550,y:350,w:180,h:80},
-{x:1050,y:390,w:180,h:80},
-{x:1300,y:310,w:220,h:100},
-{x:1900,y:420,w:200,h:80},
-{x:2300,y:330,w:220,h:100}
+const platforms=[
+{x:400,y:420,w:180,h:20},
+{x:750,y:340,w:180,h:20},
+{x:1200,y:280,w:180,h:20},
+{x:1600,y:360,w:180,h:20}
 ];
 
 const flag={
-x:2900,
+x:2350,
 y:250,
 h:150
 };
@@ -133,22 +134,22 @@ let left=false;
 let right=false;
 
 function win(){
-gameEnded=true;
-message.style.display="block";
-message.innerHTML="KAZANDIN!";
-restart.style.display="block";
+gameOver=true;
+document.getElementById("message").innerHTML="KAZANDIN!";
+document.getElementById("message").style.display="block";
+document.getElementById("restart").style.display="block";
 }
 
 function lose(){
-gameEnded=true;
-message.style.display="block";
-message.innerHTML="OYUNU KAYBETTİN!";
-restart.style.display="block";
+gameOver=true;
+document.getElementById("message").innerHTML="OYUNU KAYBETTİN";
+document.getElementById("message").style.display="block";
+document.getElementById("restart").style.display="block";
 }
 
 function update(){
 
-if(gameEnded)return;
+if(gameOver)return;
 
 player.vx=0;
 
@@ -179,22 +180,23 @@ player.ground=true;
 }
 }
 
-hills.forEach(h=>{
+platforms.forEach(p=>{
 
 if(
-player.x+player.r>h.x &&
-player.x-player.r<h.x+h.w &&
-player.y+player.r>h.y &&
-player.y+player.r<h.y+30 &&
+player.x+player.r>p.x &&
+player.x-player.r<p.x+p.w &&
+player.y+player.r>p.y &&
+player.y+player.r<p.y+20 &&
 player.vy>=0
 ){
-player.y=h.y-player.r;
+player.y=p.y-player.r;
 player.vy=0;
 player.ground=true;
 }
+
 });
 
-if(player.y>canvas.height+200){
+if(player.y>canvas.height+150){
 lose();
 }
 
@@ -204,71 +206,135 @@ win();
 
 cameraX=player.x-canvas.width/3;
 
-if(cameraX<0) cameraX=0;
+if(cameraX<0){
+cameraX=0;
+}
 
 }
 
-function draw(){
+function drawSky(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+for(let i=0;i<8;i++){
 
-for(let i=0;i<10;i++){
-ctx.beginPath();
+let x=i*400-cameraX*0.2;
+
 ctx.fillStyle="white";
-ctx.arc(200+i*350-cameraX*0.2,120+(i%2)*30,30,0,Math.PI*2);
-ctx.arc(230+i*350-cameraX*0.2,120+(i%2)*30,40,0,Math.PI*2);
-ctx.arc(270+i*350-cameraX*0.2,120+(i%2)*30,30,0,Math.PI*2);
+
+ctx.beginPath();
+ctx.arc(x+60,100,30,0,Math.PI*2);
+ctx.arc(x+95,100,40,0,Math.PI*2);
+ctx.arc(x+135,100,30,0,Math.PI*2);
 ctx.fill();
+
 }
+
+}
+
+function drawGround(){
 
 grounds.forEach(g=>{
+
 ctx.fillStyle="green";
-ctx.fillRect(g.x-cameraX,500,g.w,200);
+ctx.fillRect(
+g.x-cameraX,
+500,
+g.w,
+200
+);
+
+ctx.fillStyle="#2ECC71";
+ctx.fillRect(
+g.x-cameraX,
+490,
+g.w,
+10
+);
+
 });
 
-hills.forEach(h=>{
+}
 
-ctx.fillStyle="#2ecc71";
+function drawPlatforms(){
 
-ctx.beginPath();
-ctx.moveTo(h.x-cameraX,h.y+h.h);
-ctx.lineTo(h.x+h.w/2-cameraX,h.y);
-ctx.lineTo(h.x+h.w-cameraX,h.y+h.h);
-ctx.closePath();
-ctx.fill();
+platforms.forEach(p=>{
+
+ctx.fillStyle="#8B5A2B";
+ctx.fillRect(
+p.x-cameraX,
+p.y,
+p.w,
+p.h
+);
+
+ctx.fillStyle="#2ECC71";
+ctx.fillRect(
+p.x-cameraX,
+p.y-5,
+p.w,
+5
+);
 
 });
+
+}
+
+function drawFlag(){
 
 ctx.fillStyle="black";
-ctx.fillRect(flag.x-cameraX,flag.y,6,flag.h);
+ctx.fillRect(
+flag.x-cameraX,
+flag.y,
+5,
+flag.h
+);
 
 ctx.fillStyle="red";
-ctx.fillRect(flag.x+6-cameraX,flag.y,60,40);
+ctx.fillRect(
+flag.x+5-cameraX,
+flag.y,
+55,
+35
+);
+
+}
+
+function drawPlayer(){
 
 ctx.beginPath();
 ctx.fillStyle="red";
-ctx.arc(player.x-cameraX,player.y,player.r,0,Math.PI*2);
+ctx.arc(
+player.x-cameraX,
+player.y,
+player.r,
+0,
+Math.PI*2
+);
 ctx.fill();
 
 }
 
 function loop(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+drawSky();
+drawGround();
+drawPlatforms();
+drawFlag();
+
 update();
-draw();
+drawPlayer();
+
 requestAnimationFrame(loop);
 }
 
-leftBtn=document.getElementById("left");
-rightBtn=document.getElementById("right");
-jumpBtn=document.getElementById("jump");
+document.getElementById("left").ontouchstart=()=>left=true;
+document.getElementById("left").ontouchend=()=>left=false;
 
-leftBtn.ontouchstart=()=>left=true;
-leftBtn.ontouchend=()=>left=false;
+document.getElementById("right").ontouchstart=()=>right=true;
+document.getElementById("right").ontouchend=()=>right=false;
 
-rightBtn.ontouchstart=()=>right=true;
-rightBtn.ontouchend=()=>right=false;
-
-jumpBtn.ontouchstart=()=>{
+document.getElementById("jump").ontouchstart=()=>{
 if(player.ground){
 player.vy=-15;
 }
