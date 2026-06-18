@@ -2,19 +2,21 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Red Ball Mini</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Red Ball</title>
 
 <style>
+
 body{
 margin:0;
 overflow:hidden;
-font-family:Arial,sans-serif;
+font-family:Arial;
+background:#87CEEB;
 }
 
 canvas{
 display:block;
-background:linear-gradient(#87CEEB,#DDF6FF);
 }
 
 #message{
@@ -22,9 +24,11 @@ position:fixed;
 top:40%;
 width:100%;
 text-align:center;
-font-size:40px;
+font-size:42px;
 font-weight:bold;
 display:none;
+color:white;
+text-shadow:2px 2px 4px black;
 z-index:1000;
 }
 
@@ -39,9 +43,9 @@ display:none;
 z-index:1000;
 }
 
-#ui{
+#controls{
 position:fixed;
-bottom:90px;
+bottom:80px;
 left:0;
 width:100%;
 z-index:999;
@@ -53,8 +57,7 @@ height:100px;
 border:none;
 border-radius:50%;
 font-size:42px;
-background:white;
-opacity:.85;
+background:rgba(255,255,255,.85);
 }
 
 #jump{
@@ -71,6 +74,7 @@ right:140px;
 position:absolute;
 right:25px;
 }
+
 </style>
 </head>
 
@@ -84,7 +88,7 @@ right:25px;
 Restart
 </button>
 
-<div id="ui">
+<div id="controls">
 <button class="btn" id="jump">⬆</button>
 <button class="btn" id="left">⬅</button>
 <button class="btn" id="right">➡</button>
@@ -101,8 +105,10 @@ canvas.height=window.innerHeight;
 let cameraX=0;
 let gameOver=false;
 
+const gravity=0.7;
+
 const player={
-x:80,
+x:100,
 y:450,
 r:22,
 vx:0,
@@ -110,41 +116,53 @@ vy:0,
 ground:false
 };
 
-const gravity=0.7;
+let coinTaken=false;
 
 const grounds=[
-{x:0,w:700},
-{x:900,w:1700}
+{x:0,w:900},
+{x:1200,w:900},
+{x:2500,w:900},
+{x:3900,w:1100},
+{x:5600,w:1500}
 ];
 
 const platforms=[
-{x:400,y:420,w:180,h:20},
-{x:750,y:340,w:180,h:20},
-{x:1200,y:280,w:180,h:20},
-{x:1600,y:360,w:180,h:20}
+
+{x:1600,y:350,w:180,h:20},
+
+{x:4700,y:430,w:150,h:20},
+{x:4950,y:360,w:150,h:20},
+{x:5200,y:290,w:150,h:20},
+{x:5450,y:220,w:150,h:20},
+{x:5700,y:150,w:150,h:20}
+
 ];
 
+const coin={
+x:1690,
+y:310,
+r:15
+};
+
 const flag={
-x:2350,
-y:250,
-h:150
+x:5750,
+y:30,
+h:120
 };
 
 let left=false;
-let right=false;
-
-function win(){
+  function win(){
 gameOver=true;
-document.getElementById("message").innerHTML="KAZANDIN!";
-document.getElementById("message").style.display="block";
-document.getElementById("restart").style.display="block";
+message.innerHTML="KAZANDIN!";
+message.style.display="block";
+restart.style.display="block";
 }
 
 function lose(){
 gameOver=true;
-document.getElementById("message").innerHTML="OYUNU KAYBETTİN";
-document.getElementById("message").style.display="block";
-document.getElementById("restart").style.display="block";
+message.innerHTML="OYUNU KAYBETTİN!";
+message.style.display="block";
+restart.style.display="block";
 }
 
 function update(){
@@ -168,9 +186,14 @@ if(player.y+player.r>=500){
 let safe=false;
 
 grounds.forEach(g=>{
-if(player.x>g.x && player.x<g.x+g.w){
+
+if(
+player.x>g.x &&
+player.x<g.x+g.w
+){
 safe=true;
 }
+
 });
 
 if(safe){
@@ -178,6 +201,7 @@ player.y=500-player.r;
 player.vy=0;
 player.ground=true;
 }
+
 }
 
 platforms.forEach(p=>{
@@ -186,17 +210,27 @@ if(
 player.x+player.r>p.x &&
 player.x-player.r<p.x+p.w &&
 player.y+player.r>p.y &&
-player.y+player.r<p.y+20 &&
+player.y+player.r<p.y+25 &&
 player.vy>=0
 ){
+
 player.y=p.y-player.r;
 player.vy=0;
 player.ground=true;
+
 }
 
 });
 
-if(player.y>canvas.height+150){
+if(
+!coinTaken &&
+Math.abs(player.x-coin.x)<35 &&
+Math.abs(player.y-coin.y)<35
+){
+coinTaken=true;
+}
+
+if(player.y>canvas.height+250){
 lose();
 }
 
@@ -212,25 +246,23 @@ cameraX=0;
 
 }
 
-function drawSky(){
+function draw(){
 
-for(let i=0;i<8;i++){
+ctx.clearRect(0,0,canvas.width,canvas.height);
 
-let x=i*400-cameraX*0.2;
+for(let i=0;i<20;i++){
+
+let bx=i*450-cameraX*0.2;
 
 ctx.fillStyle="white";
 
 ctx.beginPath();
-ctx.arc(x+60,100,30,0,Math.PI*2);
-ctx.arc(x+95,100,40,0,Math.PI*2);
-ctx.arc(x+135,100,30,0,Math.PI*2);
+ctx.arc(bx+60,100,25,0,Math.PI*2);
+ctx.arc(bx+90,90,35,0,Math.PI*2);
+ctx.arc(bx+130,100,25,0,Math.PI*2);
 ctx.fill();
 
 }
-
-}
-
-function drawGround(){
 
 grounds.forEach(g=>{
 
@@ -242,7 +274,7 @@ g.w,
 200
 );
 
-ctx.fillStyle="#2ECC71";
+ctx.fillStyle="#2ecc71";
 ctx.fillRect(
 g.x-cameraX,
 490,
@@ -251,10 +283,6 @@ g.w,
 );
 
 });
-
-}
-
-function drawPlatforms(){
 
 platforms.forEach(p=>{
 
@@ -266,7 +294,7 @@ p.w,
 p.h
 );
 
-ctx.fillStyle="#2ECC71";
+ctx.fillStyle="#2ecc71";
 ctx.fillRect(
 p.x-cameraX,
 p.y-5,
@@ -276,11 +304,25 @@ p.w,
 
 });
 
+if(!coinTaken){
+
+ctx.beginPath();
+ctx.fillStyle="gold";
+
+ctx.arc(
+coin.x-cameraX,
+coin.y,
+coin.r,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
 }
 
-function drawFlag(){
-
 ctx.fillStyle="black";
+
 ctx.fillRect(
 flag.x-cameraX,
 flag.y,
@@ -289,6 +331,7 @@ flag.h
 );
 
 ctx.fillStyle="red";
+
 ctx.fillRect(
 flag.x+5-cameraX,
 flag.y,
@@ -296,12 +339,9 @@ flag.y,
 35
 );
 
-}
-
-function drawPlayer(){
-
 ctx.beginPath();
 ctx.fillStyle="red";
+
 ctx.arc(
 player.x-cameraX,
 player.y,
@@ -309,39 +349,60 @@ player.r,
 0,
 Math.PI*2
 );
+
+ctx.fill();
+
+ctx.fillStyle="white";
+
+ctx.beginPath();
+ctx.arc(player.x-cameraX-7,player.y-5,5,0,Math.PI*2);
+ctx.fill();
+
+ctx.beginPath();
+ctx.arc(player.x-cameraX+7,player.y-5,5,0,Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle="black";
+
+ctx.beginPath();
+ctx.arc(player.x-cameraX-7,player.y-5,2,0,Math.PI*2);
+ctx.fill();
+
+ctx.beginPath();
+ctx.arc(player.x-cameraX+7,player.y-5,2,0,Math.PI*2);
 ctx.fill();
 
 }
 
 function loop(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-drawSky();
-drawGround();
-drawPlatforms();
-drawFlag();
-
 update();
-drawPlayer();
+draw();
 
 requestAnimationFrame(loop);
+
 }
 
-document.getElementById("left").ontouchstart=()=>left=true;
-document.getElementById("left").ontouchend=()=>left=false;
+left.onclick=()=>{};
+right.onclick=()=>{};
 
-document.getElementById("right").ontouchstart=()=>right=true;
-document.getElementById("right").ontouchend=()=>right=false;
+left.addEventListener("touchstart",()=>left=true);
+left.addEventListener("touchend",()=>left=false);
 
-document.getElementById("jump").ontouchstart=()=>{
+right.addEventListener("touchstart",()=>right=true);
+right.addEventListener("touchend",()=>right=false);
+
+jump.addEventListener("touchstart",()=>{
+
 if(player.ground){
 player.vy=-15;
 }
-};
+
+});
 
 loop();
 
 </script>
 </body>
 </html>
+let right=false;
