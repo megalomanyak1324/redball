@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Ball Mini</title>
+
+<style>
+body{
+margin:0;
+overflow:hidden;
+font-family:Arial;
+background:#87CEEB;
+}
+
+canvas{
+display:block;
+background:linear-gradient(#87CEEB,#bdefff);
+}
+
+#message{
+position:absolute;
+top:40%;
+width:100%;
+text-align:center;
+font-size:40px;
+font-weight:bold;
+display:none;
+}
+
+#restart{
+position:absolute;
+top:55%;
+left:50%;
+transform:translateX(-50%);
+padding:12px 25px;
+font-size:20px;
+display:none;
+}
+
+.controls{
+position:absolute;
+bottom:20px;
+width:100%;
+}
+
+.btn{
+width:70px;
+height:70px;
+border:none;
+border-radius:50%;
+font-size:28px;
+background:white;
+opacity:0.8;
+}
+
+#left{
+position:absolute;
+right:120px;
+}
+
+#right{
+position:absolute;
+right:30px;
+}
+
+#jump{
+position:absolute;
+left:30px;
+}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="message"></div>
+<button id="restart" onclick="location.reload()">Restart</button>
+
+<div class="controls">
+<button class="btn" id="jump">⬆</button>
+<button class="btn" id="left">⬅</button>
+<button class="btn" id="right">➡</button>
+</div>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+let gameOver = false;
+
+const player={
+x:50,
+y:300,
+r:20,
+vx:0,
+vy:0,
+ground:false
+};
+
+const gravity=0.7;
+
+const platforms=[
+{x:300,y:420,w:100,h:20},
+{x:500,y:350,w:120,h:20},
+{x:750,y:300,w:120,h:20}
+];
+
+const ground=[
+{x:0,w:400},
+{x:500,w:1500}
+];
+
+const flag={
+x:1100,
+y:180,
+w:20,
+h:120
+};
+
+let left=false;
+let right=false;
+
+function drawGround(){
+ctx.fillStyle="green";
+
+ground.forEach(g=>{
+ctx.fillRect(g.x,500,g.w,100);
+});
+
+ctx.fillStyle="#228B22";
+ctx.fillRect(0,490,400,10);
+ctx.fillRect(500,490,1500,10);
+}
+
+function drawPlatforms(){
+ctx.fillStyle="#8B4513";
+
+platforms.forEach(p=>{
+ctx.fillRect(p.x,p.y,p.w,p.h);
+});
+}
+
+function drawFlag(){
+ctx.fillStyle="black";
+ctx.fillRect(flag.x,flag.y,5,flag.h);
+
+ctx.fillStyle="red";
+ctx.fillRect(flag.x+5,flag.y,50,30);
+}
+
+function update(){
+
+if(gameOver)return;
+
+player.vx=0;
+
+if(left) player.vx=-5;
+if(right) player.vx=5;
+
+player.x+=player.vx;
+player.vy+=gravity;
+player.y+=player.vy;
+
+player.ground=false;
+
+if(player.y+player.r>=500){
+
+let onGround=false;
+
+ground.forEach(g=>{
+if(player.x>g.x && player.x<g.x+g.w){
+onGround=true;
+}
+});
+
+if(onGround){
+player.y=500-player.r;
+player.vy=0;
+player.ground=true;
+}
+}
+
+platforms.forEach(p=>{
+
+if(
+player.x+player.r>p.x &&
+player.x-player.r<p.x+p.w &&
+player.y+player.r>p.y &&
+player.y+player.r<p.y+20 &&
+player.vy>=0
+){
+player.y=p.y-player.r;
+player.vy=0;
+player.ground=true;
+}
+});
+
+if(player.y>canvas.height){
+lose();
+}
+
+if(
+player.x>flag.x-20 &&
+player.y<flag.y+flag.h
+){
+win();
+}
+}
+
+function drawPlayer(){
+ctx.beginPath();
+ctx.fillStyle="red";
+ctx.arc(player.x,player.y,player.r,0,Math.PI*2);
+ctx.fill();
+}
+
+function win(){
+gameOver=true;
+message.style.display="block";
+message.innerHTML="KAZANDIN!";
+restart.style.display="block";
+}
+
+function lose(){
+gameOver=true;
+message.style.display="block";
+message.innerHTML="OYUNU KAYBETTİN";
+restart.style.display="block";
+}
+
+function gameLoop(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+drawGround();
+drawPlatforms();
+drawFlag();
+update();
+drawPlayer();
+
+requestAnimationFrame(gameLoop);
+}
+
+document.getElementById("left").ontouchstart=()=>left=true;
+document.getElementById("left").ontouchend=()=>left=false;
+
+document.getElementById("right").ontouchstart=()=>right=true;
+document.getElementById("right").ontouchend=()=>right=false;
+
+document.getElementById("jump").ontouchstart=()=>{
+if(player.ground){
+player.vy=-14;
+}
+};
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
