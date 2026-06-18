@@ -3,52 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mini Red Ball</title>
+<title>Red Ball Mini</title>
 
 <style>
 body{
 margin:0;
 overflow:hidden;
-background:#87CEEB;
-font-family:Arial;
+font-family:Arial,sans-serif;
 }
 
 canvas{
 display:block;
+background:linear-gradient(#87CEEB,#DDF6FF);
 }
 
-#ui{
-position:fixed;
-bottom:70px;
-left:0;
-width:100%;
-}
-
-.btn{
-width:90px;
-height:90px;
-border:none;
-border-radius:50%;
-font-size:40px;
-background:rgba(255,255,255,.85);
-}
-
-#jump{
-position:absolute;
-left:20px;
-}
-
-#left{
-position:absolute;
-right:120px;
-}
-
-#right{
-position:absolute;
-right:20px;
-}
-
-#msg{
+#message{
 position:fixed;
 top:40%;
 width:100%;
@@ -56,6 +25,7 @@ text-align:center;
 font-size:40px;
 font-weight:bold;
 display:none;
+z-index:1000;
 }
 
 #restart{
@@ -63,9 +33,43 @@ position:fixed;
 top:55%;
 left:50%;
 transform:translateX(-50%);
-padding:12px 25px;
+padding:15px 30px;
 font-size:22px;
 display:none;
+z-index:1000;
+}
+
+#ui{
+position:fixed;
+bottom:90px;
+left:0;
+width:100%;
+z-index:999;
+}
+
+.btn{
+width:100px;
+height:100px;
+border:none;
+border-radius:50%;
+font-size:42px;
+background:white;
+opacity:.85;
+}
+
+#jump{
+position:absolute;
+left:25px;
+}
+
+#left{
+position:absolute;
+right:140px;
+}
+
+#right{
+position:absolute;
+right:25px;
 }
 </style>
 </head>
@@ -74,7 +78,7 @@ display:none;
 
 <canvas id="game"></canvas>
 
-<div id="msg"></div>
+<div id="message"></div>
 
 <button id="restart" onclick="location.reload()">
 Restart
@@ -91,49 +95,56 @@ Restart
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
-canvas.width=innerWidth;
-canvas.height=innerHeight;
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
 
 let cameraX=0;
 let gameOver=false;
 
-const gravity=0.7;
-
 const player={
-x:100,
-y:420,
+x:80,
+y:450,
 r:22,
 vx:0,
 vy:0,
 ground:false
 };
 
+const gravity=0.7;
+
 const grounds=[
-{x:0,w:900},
-{x:1200,w:900},
-{x:2400,w:1200}
+{x:0,w:700},
+{x:900,w:1700}
+];
+
+const platforms=[
+{x:400,y:420,w:180,h:20},
+{x:750,y:340,w:180,h:20},
+{x:1200,y:280,w:180,h:20},
+{x:1600,y:360,w:180,h:20}
 ];
 
 const flag={
-x:3300,
-y:350
+x:2350,
+y:250,
+h:150
 };
 
-let moveLeft=false;
-let moveRight=false;
+let left=false;
+let right=false;
 
 function win(){
 gameOver=true;
-msg.innerHTML="KAZANDIN!";
-msg.style.display="block";
-restart.style.display="block";
+document.getElementById("message").innerHTML="KAZANDIN!";
+document.getElementById("message").style.display="block";
+document.getElementById("restart").style.display="block";
 }
 
 function lose(){
 gameOver=true;
-msg.innerHTML="OYUNU KAYBETTİN";
-msg.style.display="block";
-restart.style.display="block";
+document.getElementById("message").innerHTML="OYUNU KAYBETTİN";
+document.getElementById("message").style.display="block";
+document.getElementById("restart").style.display="block";
 }
 
 function update(){
@@ -142,8 +153,8 @@ if(gameOver)return;
 
 player.vx=0;
 
-if(moveLeft) player.vx=-6;
-if(moveRight) player.vx=6;
+if(left) player.vx=-6;
+if(right) player.vx=6;
 
 player.x+=player.vx;
 
@@ -157,14 +168,9 @@ if(player.y+player.r>=500){
 let safe=false;
 
 grounds.forEach(g=>{
-
-if(
-player.x>g.x &&
-player.x<g.x+g.w
-){
+if(player.x>g.x && player.x<g.x+g.w){
 safe=true;
 }
-
 });
 
 if(safe){
@@ -174,7 +180,23 @@ player.ground=true;
 }
 }
 
-if(player.y>canvas.height+200){
+platforms.forEach(p=>{
+
+if(
+player.x+player.r>p.x &&
+player.x-player.r<p.x+p.w &&
+player.y+player.r>p.y &&
+player.y+player.r<p.y+20 &&
+player.vy>=0
+){
+player.y=p.y-player.r;
+player.vy=0;
+player.ground=true;
+}
+
+});
+
+if(player.y>canvas.height+150){
 lose();
 }
 
@@ -184,25 +206,31 @@ win();
 
 cameraX=player.x-canvas.width/3;
 
-if(cameraX<0) cameraX=0;
+if(cameraX<0){
+cameraX=0;
 }
 
-function draw(){
+}
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+function drawSky(){
 
-for(let i=0;i<12;i++){
+for(let i=0;i<8;i++){
 
-let x=i*350-cameraX*0.2;
+let x=i*400-cameraX*0.2;
 
 ctx.fillStyle="white";
 
 ctx.beginPath();
-ctx.arc(x+60,100,25,0,Math.PI*2);
-ctx.arc(x+95,90,35,0,Math.PI*2);
-ctx.arc(x+130,100,25,0,Math.PI*2);
+ctx.arc(x+60,100,30,0,Math.PI*2);
+ctx.arc(x+95,100,40,0,Math.PI*2);
+ctx.arc(x+135,100,30,0,Math.PI*2);
 ctx.fill();
+
 }
+
+}
+
+function drawGround(){
 
 grounds.forEach(g=>{
 
@@ -214,7 +242,7 @@ g.w,
 200
 );
 
-ctx.fillStyle="#2ecc71";
+ctx.fillStyle="#2ECC71";
 ctx.fillRect(
 g.x-cameraX,
 490,
@@ -224,21 +252,53 @@ g.w,
 
 });
 
+}
+
+function drawPlatforms(){
+
+platforms.forEach(p=>{
+
+ctx.fillStyle="#8B5A2B";
+ctx.fillRect(
+p.x-cameraX,
+p.y,
+p.w,
+p.h
+);
+
+ctx.fillStyle="#2ECC71";
+ctx.fillRect(
+p.x-cameraX,
+p.y-5,
+p.w,
+5
+);
+
+});
+
+}
+
+function drawFlag(){
+
 ctx.fillStyle="black";
 ctx.fillRect(
 flag.x-cameraX,
-350,
+flag.y,
 5,
-150
+flag.h
 );
 
 ctx.fillStyle="red";
 ctx.fillRect(
 flag.x+5-cameraX,
-350,
-60,
+flag.y,
+55,
 35
 );
+
+}
+
+function drawPlayer(){
 
 ctx.beginPath();
 ctx.fillStyle="red";
@@ -251,45 +311,33 @@ Math.PI*2
 );
 ctx.fill();
 
-ctx.fillStyle="white";
-
-ctx.beginPath();
-ctx.arc(player.x-cameraX-7,player.y-5,5,0,Math.PI*2);
-ctx.fill();
-
-ctx.beginPath();
-ctx.arc(player.x-cameraX+7,player.y-5,5,0,Math.PI*2);
-ctx.fill();
-
-ctx.fillStyle="black";
-
-ctx.beginPath();
-ctx.arc(player.x-cameraX-7,player.y-5,2,0,Math.PI*2);
-ctx.fill();
-
-ctx.beginPath();
-ctx.arc(player.x-cameraX+7,player.y-5,2,0,Math.PI*2);
-ctx.fill();
 }
 
 function loop(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+drawSky();
+drawGround();
+drawPlatforms();
+drawFlag();
+
 update();
-draw();
+drawPlayer();
+
 requestAnimationFrame(loop);
 }
 
-document.getElementById("left").ontouchstart=()=>moveLeft=true;
-document.getElementById("left").ontouchend=()=>moveLeft=false;
+document.getElementById("left").ontouchstart=()=>left=true;
+document.getElementById("left").ontouchend=()=>left=false;
 
-document.getElementById("right").ontouchstart=()=>moveRight=true;
-document.getElementById("right").ontouchend=()=>moveRight=false;
+document.getElementById("right").ontouchstart=()=>right=true;
+document.getElementById("right").ontouchend=()=>right=false;
 
 document.getElementById("jump").ontouchstart=()=>{
-
 if(player.ground){
 player.vy=-15;
 }
-
 };
 
 loop();
